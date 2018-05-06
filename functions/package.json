@@ -6,7 +6,7 @@
     "serve": "npm run build && firebase serve --only functions",
     "shell": "npm run build && firebase experimental:functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
+    "deploy": "./node_modules/firebase-tools/bin/firebase deploy --only functions --debug",
     "logs": "firebase functions:log",
     "test": "mocha --reporter spec"
   },
@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "firebase-functions-test": "^0.1.2",
+    "firebase-tools": "^3.18.4",
     "mocha": "^5.1.1",
     "tslint": "^5.8.0",
     "typescript": "^2.5.3"
