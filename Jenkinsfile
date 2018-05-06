@@ -46,13 +46,15 @@ pipeline {
                 expression { BRANCH_NAME ==~ /(master|PR-[0-9]*)/ }
             }
             steps {
-                def project = ' -P default'
+                script {
+                    def project = ' -P default'
 
-                if(env.BRANCH_NAME == 'master') {
-                  project = ' -P prod'
+                    if(env.BRANCH_NAME == 'master') {
+                      project = ' -P prod'
+                    }
+
+                    sh "npm --prefix functions run deploy${project}"
                 }
-
-                sh "npm --prefix functions run deploy${project}"
             }
         }
     }
