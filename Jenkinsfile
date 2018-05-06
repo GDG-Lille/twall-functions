@@ -47,13 +47,13 @@ pipeline {
             }
             steps {
                 script {
-                    def project = ' -P default'
+                    def project = '-P default'
 
                     if(env.BRANCH_NAME == 'master') {
-                      project = ' -P prod'
+                      project = '-P prod'
                     }
 
-                    sh "npm --prefix functions run deploy${project}"
+                    sh "npm --prefix functions run deploy -- ${project}"
                 }
             }
         }
