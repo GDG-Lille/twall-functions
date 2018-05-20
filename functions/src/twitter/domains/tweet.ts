@@ -9,8 +9,8 @@ export class Tweet {
                 public user?: Tweople,
                 public text?: string,
                 public created_at?: Date,
-                public retweetCount?: number,
-                public favoriteCount?: number) {
+                public retweet_count?: number,
+                public favorite_count?: number) {
     }
 
 }
