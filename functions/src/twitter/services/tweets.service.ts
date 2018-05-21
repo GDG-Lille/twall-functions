@@ -104,8 +104,12 @@ class TweetsService {
 
                         series.sort((a, b) => a.name - b.name);
 
+                        const metric = new Metric();
+                        metric.name = hashtag;
+                        metric.series = series;
+
                         const metrics = [];
-                        metrics.push(hashtag, series);
+                        metrics.push(metric);
                         resolve(metrics);
                     });
             });
