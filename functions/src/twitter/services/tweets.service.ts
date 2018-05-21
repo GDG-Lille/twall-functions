@@ -86,7 +86,7 @@ class TweetsService {
                         });
 
                         tweets.filter(tweet => tweet.created_at >= today) // Only tweets for todays
-                            .filter(tweet => tweet.entities.hashtags !== undefined) // Only tweets with hashtags
+                            .filter(tweet => tweet.entities !== undefined && tweet.entities.hashtags !== undefined) // Only tweets with hashtags
                             .filter(tweet => tweet.entities.hashtags.find(hashtagFromEntities => hashtagFromEntities.toLowerCase() === hashtag.substring(1).toLowerCase()) !== undefined) // Only tweet with specific hashtag
                             .forEach(tweet => {
                                 const hour = tweet.created_at.getHours();
