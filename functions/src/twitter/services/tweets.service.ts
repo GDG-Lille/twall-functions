@@ -1,5 +1,7 @@
+import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {Twitter} from 'twitter-node-client';
+import tweetToTweetConverter from '../converter/tweet-to-tweet.converter';
 import {SearchParameter} from '../domains/search-parameter';
 import {Tweet} from '../domains/tweet';
 
@@ -8,13 +10,17 @@ import {Tweet} from '../domains/tweet';
  */
 class TweetsService {
 
-    private twitterClient: any;
+    private twitterClient: Twitter;
+
+    private db: any;
 
     constructor() {
         this.twitterClient = new Twitter({
             consumerKey: functions.config().twitter.consumer.key,
             consumerSecret: functions.config().twitter.consumer.secret
         });
+        admin.initializeApp();
+        this.db = admin.database();
     }
 
     /**
@@ -28,12 +34,13 @@ class TweetsService {
 
                 this.twitterClient.getSearch(
                     params,
-                    (err) => {
+                    err => {
                         console.error(new Error(err)); // Log the true error in StackDriver
                         reject(new Error(`Error retrieving tweet(s) from query ${params.q} from the Twitter platform.`));
                     },
-                    (data) => {
-                        const tweets = JSON.parse(data).statuses.map(tweet => <Tweet> tweet);
+                    data => {
+                        const tweets = JSON.parse(data).statuses.map(tweet => tweetToTweetConverter.convert(tweet));
+                        this.saveAll(tweets).catch(err => console.error(new Error(err)));
                         resolve(tweets);
                     });
 
@@ -52,6 +59,27 @@ class TweetsService {
         params.count = count;
 
         return this.getAllBySearch(params);
+    }
+
+    /**
+     * Persist all {@link Tweet} in DB.
+     * @param {Array<Tweet>} tweets
+     * @returns {Promise<void>}
+     */
+    public saveAll(tweets: Array<Tweet>): Promise<void> {
+        return new Promise(
+            (resolve: (value: void) => void, reject: (reason: Error) => void): void => {
+
+                tweets.forEach(tweet => {
+                    this.db
+                        .ref(`tweets/${tweet.id_str}`)
+                        .set(tweet)
+                        .catch(err => console.error(new Error(err)));
+                });
+
+                resolve(null);
+
+            });
     }
 
 }
