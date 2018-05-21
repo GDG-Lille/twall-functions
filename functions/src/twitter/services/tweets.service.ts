@@ -2,7 +2,9 @@ import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {Twitter} from 'twitter-node-client';
 import tweetToTweetConverter from '../converter/tweet-to-tweet.converter';
+import {Metric} from '../domains/metric';
 import {SearchParameter} from '../domains/search-parameter';
+import {Serie} from '../domains/serie';
 import {Tweet} from '../domains/tweet';
 
 /**
@@ -11,7 +13,6 @@ import {Tweet} from '../domains/tweet';
 class TweetsService {
 
     private twitterClient: Twitter;
-
     private db: any;
 
     constructor() {
@@ -59,6 +60,55 @@ class TweetsService {
         params.count = count;
 
         return this.getAllBySearch(params);
+    }
+
+    /**
+     * Compute a list of today's {@link Metric} hour by hour for a specific hashtag.
+     * @param {string} hashtag
+     * @returns {Promise<Array<Metric>>}
+     */
+    public getTodaysMetricsForHashtag(hashtag: string): Promise<Array<Metric>> {
+        return new Promise(
+            (resolve: (value: Array<Metric>) => void, reject: (reason: Error) => void): void => {
+
+                const today = new Date();
+                today.setHours(0, 0, 0);
+
+                this.db.ref('tweets')
+                    .once('value', datas => {
+                        const series = [];
+                        const tweets = [];
+
+                        datas.forEach(data => {
+                            const tweet = data.val();
+                            tweet.created_at = new Date(tweet.created_at);
+                            tweets.push(tweet);
+                        });
+
+                        tweets.filter(tweet => tweet.created_at >= today) // Only tweets for todays
+                            .filter(tweet => tweet.entities.hashtags !== undefined) // Only tweets with hashtags
+                            .filter(tweet => tweet.entities.hashtags.find(hashtagFromEntities => hashtagFromEntities.toLowerCase() === hashtag.substring(1).toLowerCase()) !== undefined) // Only tweet with specific hashtag
+                            .forEach(tweet => {
+                                const hour = tweet.created_at.getHours();
+                                let serieFound = series.find(serie => serie.name === hour);
+
+                                if (serieFound === undefined) {
+                                    serieFound = new Serie();
+                                    serieFound.name = hour;
+                                    serieFound.value = 1;
+                                    series.push(serieFound);
+                                } else {
+                                    serieFound.value++;
+                                }
+                            });
+
+                        series.sort((a, b) => a.name - b.name);
+
+                        const metrics = [];
+                        metrics.push(hashtag, series);
+                        resolve(metrics);
+                    });
+            });
     }
 
     /**
