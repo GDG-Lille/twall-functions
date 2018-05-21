@@ -1,3 +1,4 @@
+import {Twentities} from './twentities';
 import {Tweople} from './tweople';
 
 /**
@@ -10,7 +11,8 @@ export class Tweet {
                 public text?: string,
                 public created_at?: Date,
                 public retweet_count?: number,
-                public favorite_count?: number) {
+                public favorite_count?: number,
+                public entities = new Twentities()) {
     }
 
 }

@@ -4,7 +4,7 @@
 export class SearchParameter {
 
     constructor(public q?: string,
-                public count: number = 10,
+                public count: number = 50,
                 public result_type: string = 'recent') {
     }
 

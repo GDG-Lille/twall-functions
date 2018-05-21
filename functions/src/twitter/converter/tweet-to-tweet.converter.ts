@@ -19,6 +19,9 @@ class TweetToTweetConverter {
         tweetConverted.retweet_count = tweet.retweet_count;
         tweetConverted.favorite_count = tweet.favorite_count;
 
+        tweet.entities.hashtags.forEach(hashtag => tweetConverted.entities.hashtags.push(hashtag.text));
+        tweet.entities.user_mentions.forEach(userMention => tweetConverted.entities.user_mentions.push(userMention.screen_name));
+
         tweetConverted.user = userToTweopleConverter.convert(tweet.user);
 
         return tweetConverted;
