@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
+import * as moment from 'moment';
 import {Twitter} from 'twitter-node-client';
 import tweetToTweetConverter from '../converter/tweet-to-tweet.converter';
 import {Metric} from '../domains/metric';
@@ -49,14 +50,16 @@ class TweetsService {
     }
 
     /**
-     * Retrieve a list of {@link Tweet} (by default, limit to 50) via a specific hashtag.
+     * Retrieve a list of today's {@link Tweet} (by default, limit to 50) via a specific hashtag.
      * @param {string} hashtag
      * @param {number} count
      * @returns {Promise<Array<Tweet>>}
      */
-    public getAllForHashtag(hashtag: string, count: number = 50): Promise<Array<Tweet>> {
+    public getTodaysTweetsForHashtag(hashtag: string, count: number = 50): Promise<Array<Tweet>> {
+        const today = moment();
+
         const params = new SearchParameter();
-        params.q = `${hashtag} -filter:retweets`;
+        params.q = `${hashtag} since:${today.format('YYYY-MM-DD')} -filter:retweets`;
         params.count = count;
 
         return this.getAllBySearch(params);
@@ -71,8 +74,10 @@ class TweetsService {
         return new Promise(
             (resolve: (value: Array<Metric>) => void, reject: (reason: Error) => void): void => {
 
-                const today = new Date();
-                today.setHours(0, 0, 0);
+                const today = moment();
+                today.hour(0);
+                today.minute(0);
+                today.second(0);
 
                 this.db.ref('tweets')
                     .once('value', datas => {
@@ -81,15 +86,15 @@ class TweetsService {
 
                         datas.forEach(data => {
                             const tweet = data.val();
-                            tweet.created_at = new Date(tweet.created_at);
+                            tweet.created_at = moment(tweet.created_at);
                             tweets.push(tweet);
                         });
 
-                        tweets.filter(tweet => tweet.created_at >= today) // Only tweets for todays
+                        tweets.filter(tweet => today.isBefore(tweet.created_at)) // Only tweets for todays
                             .filter(tweet => tweet.entities !== undefined && tweet.entities.hashtags !== undefined) // Only tweets with hashtags
                             .filter(tweet => tweet.entities.hashtags.find(hashtagFromEntities => hashtagFromEntities.toLowerCase() === hashtag.substring(1).toLowerCase()) !== undefined) // Only tweet with specific hashtag
                             .forEach(tweet => {
-                                const hour = tweet.created_at.getHours();
+                                const hour = tweet.created_at.hour();
                                 let serieFound = series.find(serie => serie.name === hour);
 
                                 if (serieFound === undefined) {
