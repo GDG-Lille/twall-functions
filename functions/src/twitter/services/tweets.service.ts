@@ -1,8 +1,11 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
+import * as moment from 'moment';
 import {Twitter} from 'twitter-node-client';
 import tweetToTweetConverter from '../converter/tweet-to-tweet.converter';
+import {Metric} from '../domains/metric';
 import {SearchParameter} from '../domains/search-parameter';
+import {Serie} from '../domains/serie';
 import {Tweet} from '../domains/tweet';
 
 /**
@@ -11,7 +14,6 @@ import {Tweet} from '../domains/tweet';
 class TweetsService {
 
     private twitterClient: Twitter;
-
     private db: any;
 
     constructor() {
@@ -48,17 +50,74 @@ class TweetsService {
     }
 
     /**
-     * Retrieve a list of {@link Tweet} (by default, limit to 50) via a specific hashtag.
+     * Retrieve a list of today's {@link Tweet} (by default, limit to 50) via a specific hashtag.
      * @param {string} hashtag
      * @param {number} count
      * @returns {Promise<Array<Tweet>>}
      */
-    public getAllForHashtag(hashtag: string, count: number = 50): Promise<Array<Tweet>> {
+    public getTodaysTweetsForHashtag(hashtag: string, count: number = 50): Promise<Array<Tweet>> {
+        const today = moment();
+
         const params = new SearchParameter();
-        params.q = `${hashtag} -filter:retweets`;
+        params.q = `${hashtag} since:${today.format('YYYY-MM-DD')} -filter:retweets`;
         params.count = count;
 
         return this.getAllBySearch(params);
+    }
+
+    /**
+     * Compute a list of today's {@link Metric} hour by hour for a specific hashtag.
+     * @param {string} hashtag
+     * @returns {Promise<Array<Metric>>}
+     */
+    public getTodaysMetricsForHashtag(hashtag: string): Promise<Array<Metric>> {
+        return new Promise(
+            (resolve: (value: Array<Metric>) => void, reject: (reason: Error) => void): void => {
+
+                const today = moment();
+                today.hour(0);
+                today.minute(0);
+                today.second(0);
+
+                this.db.ref('tweets')
+                    .once('value', datas => {
+                        const series = [];
+                        const tweets = [];
+
+                        datas.forEach(data => {
+                            const tweet = data.val();
+                            tweet.created_at = moment(tweet.created_at);
+                            tweets.push(tweet);
+                        });
+
+                        tweets.filter(tweet => today.isBefore(tweet.created_at)) // Only tweets for todays
+                            .filter(tweet => tweet.entities !== undefined && tweet.entities.hashtags !== undefined) // Only tweets with hashtags
+                            .filter(tweet => tweet.entities.hashtags.find(hashtagFromEntities => hashtagFromEntities.toLowerCase() === hashtag.substring(1).toLowerCase()) !== undefined) // Only tweet with specific hashtag
+                            .forEach(tweet => {
+                                const hour = tweet.created_at.hour();
+                                let serieFound = series.find(serie => serie.name === hour);
+
+                                if (serieFound === undefined) {
+                                    serieFound = new Serie();
+                                    serieFound.name = hour;
+                                    serieFound.value = 1;
+                                    series.push(serieFound);
+                                } else {
+                                    serieFound.value++;
+                                }
+                            });
+
+                        series.sort((a, b) => a.name - b.name);
+
+                        const metric = new Metric();
+                        metric.name = hashtag;
+                        metric.series = series;
+
+                        const metrics = [];
+                        metrics.push(metric);
+                        resolve(metrics);
+                    });
+            });
     }
 
     /**
