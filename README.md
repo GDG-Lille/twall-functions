@@ -2,13 +2,6 @@
 
 [![Build Status](http://jenkins.bodul.fr/buildStatus/icon?job=GDG-Lille/twall-functions/master)](http://jenkins.bodul.fr/job/GDG-Lille/twall-functions/master)
 
-[![Quality Gate](https://sonarcloud.io/api/badges/gate?key=twall-functions)](https://sonarcloud.io/dashboard/index/twall-functions)
-[![Lines of Codes](https://sonarcloud.io/api/badges/measure?key=twall-functions&metric=ncloc&blinking=true)](https://sonarcloud.io/dashboard/index/twall-functions)
-[![Blocker Violations](https://sonarcloud.io/api/badges/measure?key=twall-functions&metric=blocker_violations&blinking=true)](https://sonarcloud.io/dashboard/index/twall-functions)
-[![Critical Violations](https://sonarcloud.io/api/badges/measure?key=twall-functions&metric=critical_violations&blinking=true)](https://sonarcloud.io/dashboard/index/twall-functions)
-[![Bugs](https://sonarcloud.io/api/badges/measure?key=twall-functions&metric=bugs&blinking=true)](https://sonarcloud.io/dashboard/index/twall-functions)
-[![Code Smells](https://sonarcloud.io/api/badges/measure?key=twall-functions&metric=code_smells&blinking=true)](https://sonarcloud.io/dashboard/index/twall-functions)
-
 ## Made with ...
 * [NPM](https://www.npmjs.com/) 
 * [Typescript](https://www.typescriptlang.org/)

@@ -1,43 +1,7 @@
-import * as cors from 'cors';
-
+import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import tweetsService from './twitter/services/tweets.service';
+import findAllTweetsFromTwitter from './twitter/functions/find-all-tweets-from-twitter';
 
-/**
- * Retrieve a list of {@link Tweet} with a specific hashtag.
- * @type {HttpsFunction}
- */
-export const getTodaysTweetsForHashtag = functions.https.onRequest((req, res) => {
-    cors({origin: functions.config().cors.origin.split(',')})(req, res, () => {
-        const hashtag = req.query.hashtag;
-        const count = req.query.count;
+admin.initializeApp();
 
-        if (hashtag === undefined || count === undefined) {
-            res.sendStatus(400);
-        }
-
-        tweetsService.getTodaysTweetsForHashtag(hashtag, count)
-            .then(
-                tweets => res.send(tweets),
-                err => res.status(500).send(err));
-    });
-});
-
-/**
- * Compute a list of today's {@link Metric} hour by hour for a specific hashtag.
- * @type {HttpsFunction}
- */
-export const getTodaysMetricsForHashtag = functions.https.onRequest((req, res) => {
-    cors({origin: functions.config().cors.origin.split(',')})(req, res, () => {
-        const hashtag = req.query.hashtag;
-
-        if (hashtag === undefined) {
-            res.sendStatus(400);
-        }
-
-        tweetsService.getTodaysMetricsForHashtag(hashtag)
-            .then(
-                metrics => res.send(metrics),
-                err => res.status(500).send(err));
-    });
-});
+exports.findAllTweetsFromTwitter = functions.https.onCall(findAllTweetsFromTwitter);
