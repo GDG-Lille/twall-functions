@@ -26,5 +26,8 @@ export default (data, context) => {
     console.log('editionId', editionId, 'criteria', criteria);
 
     return tweetsService
-        .findAllFromTwitterAndSaveThemLocally(editionId, criteria);
+        .findAllFromTwitterAndSaveThemLocally(editionId, criteria)
+        .then(() => {
+            return null;
+        });
 };
