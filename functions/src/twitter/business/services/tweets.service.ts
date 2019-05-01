@@ -37,7 +37,7 @@ class TweetsService {
 
         try {
             const response = await this.httpClient
-                .get(`/search/tweets.json?q=${encodedCriteria}`,
+                .get(`/search/tweets.json?q=${encodedCriteria} -filter:retweets`,
                     {
                         headers: {
                             'Authorization': `Bearer ${bearerToken.access_token}`
