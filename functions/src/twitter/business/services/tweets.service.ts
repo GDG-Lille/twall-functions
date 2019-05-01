@@ -10,6 +10,8 @@ class TweetsService {
     private collection: FirebaseFirestore.CollectionReference;
 
     constructor() {
+        admin.initializeApp();
+
         this.httpClient = axios.create({
             baseURL: 'https://api.twitter.com/1.1'
         });
@@ -19,27 +21,55 @@ class TweetsService {
     }
 
     public async findAllByCriteria(criteria: string): Promise<Array<any>> {
-        const bearerToken = await authentificationService.getBearerToken();
+        console.log(
+            'Finding tweets from Twitter on criteria %s ...',
+            criteria);
 
-        criteria.replace('@', 'from:');
+        let bearerToken = null;
 
-        return this.httpClient
-            .get(`/search/tweets.json?q=${criteria}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${bearerToken.access_token}`
-                    }
-                })
-            .then(response => response.data.statuses);
+        try {
+            bearerToken = await authentificationService.findBearerToken();
+        } catch (error) {
+            throw error;
+        }
+
+        const encodedCriteria = encodeURIComponent(criteria);
+
+        try {
+            const response = await this.httpClient
+                .get(`/search/tweets.json?q=${encodedCriteria}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${bearerToken.access_token}`
+                        }
+                    });
+            return response.data.statuses;
+        } catch (error) {
+            const technicalError = new Error(`Failed to find tweets from Twitter on criteria ${criteria}.`);
+            console.error(technicalError, error);
+            throw technicalError;
+        }
     }
 
     public async findAllFromTwitterAndSaveThemLocally(editionId: string, criteria: string): Promise<any> {
-        const tweetsFromTwitter = await this.findAllByCriteria(criteria);
+        console.log(
+            'Finding and saving tweets from Twitter for editionId %s on criteria %s ...',
+            editionId,
+            criteria);
+
+        let tweetsFromTwitter = [];
+
+        try {
+            tweetsFromTwitter = await this.findAllByCriteria(criteria);
+        } catch (error) {
+            throw error;
+        }
+
         const batch = this.db.batch();
 
         tweetsFromTwitter.forEach(tweet => {
             batch.set(
-                this.collection.doc(),
+                this.collection.doc(tweet.id_str),
                 {
                     text: tweet.text,
                     createdAt: new Date(tweet.created_at),
@@ -49,11 +79,19 @@ class TweetsService {
                         fullName: tweet.user.name,
                         login: tweet.user.screen_name,
                         profileImageURL: tweet.user.profile_image_url_https
-                    }
+                    },
+                    edition: editionId,
+                    criteria: criteria
                 });
         });
 
-        return batch.commit();
+        try {
+            return await batch.commit();
+        } catch (error) {
+            const technicalError = new Error(`Failed to find and save tweets from Twitter for editionId ${editionId} on criteria ${criteria}.`);
+            console.error(technicalError, error);
+            throw technicalError;
+        }
     }
 
 }

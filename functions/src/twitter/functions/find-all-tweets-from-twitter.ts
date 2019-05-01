@@ -2,29 +2,36 @@ import * as functions from 'firebase-functions';
 
 import tweetsService from '../business/services/tweets.service';
 
-export default (data, context) => {
-    const params = data.params;
+const packageInfos = require('../../../package.json');
 
-    if (params === undefined || data.params === null) {
+export default async (data, context) => {
+    if (data === undefined || data === null) {
         throw new functions.https.HttpsError(
-            'invalid-argument', 'You must provide an edition\'s ID and a search criteria.');
+            'invalid-argument',
+            'You must provide an edition\'s ID and a search criteria.');
     }
 
-    const editionId = params.editionId;
-    const criteria = params.criteria;
+    const editionId = data.editionId;
+    const criteria = data.criteria;
 
     if (editionId === undefined) {
         throw new functions.https.HttpsError(
-            'invalid-argument', 'You must provide an edition\'s ID.');
+            'invalid-argument',
+            'You must provide an edition\'s ID.');
     }
 
     if (criteria === undefined) {
         throw new functions.https.HttpsError(
-            'invalid-argument', 'You must provide a search criteria.');
+            'invalid-argument',
+            'You must provide a search criteria.');
     }
 
-    console.log('editionId', editionId, 'criteria', criteria);
-
-    return tweetsService
-        .findAllFromTwitterAndSaveThemLocally(editionId, criteria);
+    try {
+        await tweetsService.findAllFromTwitterAndSaveThemLocally(editionId, criteria);
+        return {status: 'OK'};
+    } catch (error) {
+        throw new functions.https.HttpsError(
+            'internal',
+            `Failed to find and save tweets from Twitter. Please open an issue at ${packageInfos.bugs.url}.`);
+    }
 };
