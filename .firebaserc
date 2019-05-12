@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "twall-dev",
-    "prod": "twall-9be4d"
+    "staging": "twall-dev",
+    "default": "twall-9be4d"
   }
 }
