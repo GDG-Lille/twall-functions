@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
-    "lib": ["es6"],
+    "lib": [
+      "es6"
+    ],
     "module": "commonjs",
     "noImplicitReturns": true,
+    "resolveJsonModule": true,
     "outDir": "lib",
     "sourceMap": true,
     "target": "es6"
